@@ -1,0 +1,157 @@
+---
+title: "Logistic regression ch8"
+author: "Petri Haavisto"
+format: html
+editor: visual
+---
+
+## Binary logistic regression ch8
+
+See textbook page 235
+
+1 Load libraries:
+
+```{r}
+library(tidyverse)
+library(car)
+library(mlogit)
+```
+
+2 Load data file and show head
+
+```{r}
+eelData <- read.delim(file <-  here::here("data/eel.dat"), header=TRUE)
+head(eelData) #shows first six rows of the dataframe
+```
+
+2.5 If you want to see the whole table
+
+```{r}
+view(eelData)
+```
+
+3 Factor and set baseline categories. Baseline categories will be "Not Cured" and "No Treatment"
+
+```{r}
+eelData$Cured <- factor(eelData$Cured)
+eelData$Intervention <- factor(eelData$Intervention)
+eelData$Cured <- relevel(eelData$Cured, "Not Cured")
+eelData$Intervention <- relevel(eelData$Intervention, "No Treatment")
+```
+
+4 Logistic regression with glm() (generalized linear model) function. In first model we'll include only Intervention as a predictor ("No Treatment" or "Intervention" ).
+
+```{r}
+eelModel.1 <- glm(Cured ~ Intervention, data = eelData, family = binomial())
+```
+
+5 Summary of results. Here Residual deviance is deviance for the model that we actually have. Null deviance ignores the explanatory variables.
+
+```{r}
+summary(eelModel.1)
+```
+
+6 If you want to check out what baseline model would be you can run a model with only an intercept
+
+```{r}
+eelModel.0 <- glm(Cured ~ 1, data = eelData, family = binomial())
+summary(eelModel.0)
+```
+
+7 We can create a value called modelChi that is the deviance for the model and subtracted from the null deviance of the same model. And we can calculate the final p-value. Check textbook page 332 for further explanations.
+
+```{r}
+modelChi <- eelModel.1$null.deviance - eelModel.1$deviance
+modelChi
+chidf <- eelModel.1$df.null - eelModel.1$df.residual
+chidf
+chisq.prob <- 1 - pchisq(modelChi, chidf)
+chisq.prob
+```
+
+8 Function that computes R2s.
+
+```{r}
+logisticPseudoR2s <- function(LogModel) {
+  dev <- LogModel$deviance
+  nullDev <- LogModel$null.deviance
+  modelN <- length(LogModel$fitted.values)
+  R.l <- 1 - dev / nullDev
+  R.cs <- 1 - exp ( -(nullDev - dev) /modelN)
+  R.n <- R.cs / (1 - ( exp (-(nullDev /modelN))))
+  cat("Pseudo R^2 Logistic Regression\n")
+  cat("----------------------------------\n")
+  cat("Hosmer and Lemeshow R^2:   ", round(R.l, 3), "\n")
+  cat("Cox and Snell R^2:         ", round(R.cs, 3), "\n")
+  cat("Nagelkerke R^2:            ", round(R.n, 3), "\n")
+  cat("----------------------------------\n")
+  }
+```
+
+9 Call the function above. For full explanation what is happening here, see textbook page
+
+```{r}
+logisticPseudoR2s(eelModel.1)
+```
+
+10 Odds ratio for the predictors in the model.
+
+```{r}
+exp(eelModel.1$coefficients)
+```
+
+11 Let's check confidence intervals:
+
+```{r}
+exp(confint(eelModel.1))
+```
+
+12 Now do another model where intervention and duration are predictors.
+
+```{r}
+eelModel.2 <- glm(Cured ~ Intervention + Duration, data = eelData, family = binomial())
+summary(eelModel.2)
+```
+
+13 We can compare these models manually.
+
+```{r}
+modelChi2 <- eelModel.1$deviance - eelModel.2$deviance
+modelChi2
+chidf2 <- eelModel.1$df.residual - eelModel.2$df.residual
+chidf2
+chisq.prob2 <- 1 - pchisq(modelChi2, chidf2)
+chisq.prob2
+```
+
+14 We can also use anova.
+
+```{r}
+anova(eelModel.1, eelModel.2, dfbeta[,"(Intercept")])
+```
+
+15 Let's create a table for Eel-data and add some useful information to it from the Model. We are going to use MODEL 1 here. First let's add some values.
+
+```{r}
+oma_eelData <- eelData #let's not touch the original 
+oma_eelData$predicted.probabilities <- fitted(eelModel.1)
+oma_eelData$standardized.residuals <- rstandard(eelModel.1)
+oma_eelData$studentized.residuals <- rstudent(eelModel.1)
+oma_eelData$dfbeta <- dfbeta(eelModel.1)
+oma_eelData$dffits <- dffits(eelModel.1)
+oma_eelData$leverage <- hatvalues(eelModel.1)
+view(oma_eelData)
+```
+
+16 And when everything is all right we can save everything to a file:
+
+```{r}
+write.table(oma_eelData, "Oma Eel DiagnosticS.dat", sep = "\t", row.names = FALSE)
+```
+
+17 Let's have look leverage, studentized.residuals and dfbeta values
+
+```{r}
+sub_eel <- oma_eelData[, c("leverage", "studentized.residuals", "dfbeta")]
+view(sub_eel)
+```

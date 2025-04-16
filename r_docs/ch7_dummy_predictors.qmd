@@ -1,0 +1,76 @@
+---
+title: "CH7_dummy_contrasts"
+author: "Petri Haavisto"
+format: html
+editor: visual
+---
+
+## How to create dummy variables for Categorical predictors
+
+Check out textbook page 302
+
+1 Load libraries:
+
+```{r}
+library(tidyverse)
+```
+
+2 Load data:
+
+```{r}
+gfr <- read.delim(file <-  here::here("data/GlastonburyFestivalRegression.dat"), header=TRUE)
+```
+
+3 View data
+
+```{r}
+view(gfr)
+```
+
+JUMP TO ALTERNATIVE, if you prefer manual method \*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*
+
+4 Create dummy variables for music taste. But first make music a factor. Factors are used to categorize data.
+
+```{r}
+gfr$music <- factor(gfr$music)
+contrasts(gfr$music) <- contr.treatment(4, base = 4)
+```
+
+5 Now music has a contrast attribute
+
+```{r}
+gfr$music
+```
+
+ALTERNATIVE STEPS 4 AND 5: \*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*
+
+Set contrasts manually
+
+```{r}
+gfr$music <- factor(gfr$music)
+crusty_v_NMA <- c(1,0,0,0)
+indie_v_NMA <- c(0,1,0,0)
+metal_v_NMA <- c(0,0,1,0)
+contrasts(gfr$music) <- cbind(crusty_v_NMA, indie_v_NMA, metal_v_NMA)
+```
+
+And view:
+
+```{r}
+gfr$music
+```
+
+ALTERNATIVE STEPS END \*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*
+
+6 Now we can check regression with dummy variables.
+
+```{r}
+glastonburyModel <- lm(change ~ music, data = gfr)
+summary(glastonburyModel)
+```
+
+7 These means represent the average change in hygiene scores for the three groups.
+
+```{r}
+round(tapply(gfr$change, gfr$music, mean, na.rm=TRUE), 3)
+```

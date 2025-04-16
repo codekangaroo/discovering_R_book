@@ -1,0 +1,87 @@
+---
+title: "Multinomial logistic regression Ch 8"
+author: "Petri Haavisto"
+format: html
+editor: visual
+---
+
+## Multinomial logistic regression Chat-Up lines Chapter 8.9
+
+Check out textbook 346 THIS HAS TO BE DONE AGAIN WITH UPDATED METHODS. DOES NOT PROVIDE RIGHT RESULTS AT THE MOMENT.
+
+1 Load libraries
+
+```{r}
+library(conflicted) 
+library(tidyverse)
+library(mlogit)
+conflict_prefer("filter", "dplyr")
+conflict_prefer("lag", "dplyr")
+```
+
+2 Load data from dat-file
+
+```{r}
+chatData <- read.delim(file <- here::here("data/Chat-Up Lines.dat"), header = TRUE)
+view(chatData)
+```
+
+3 You can check if categorical data is factor with is.factor function:
+
+```{r}
+is.factor(chatData$Success)
+is.factor(chatData$Gender)
+```
+
+4 And if not, make them factors. And then run test above again.
+
+```{r}
+chatData$Success <- factor(chatData$Success)
+chatData$Gender <- factor(chatData$Gender)
+# Or you can use as.factor() function
+#chatData$Gender <-  as.factor(chatData$Gender)
+#chatData$Success <- as.factor(chatData$Success)
+```
+
+5 Let's make male the baseline gender
+
+```{r}
+chatData$Gender<-relevel(chatData$Gender, ref = 1)
+
+```
+
+5 We will restructure the current data so one person has 3 rows:
+
+```{r}
+#mlChat <- mlogit.data(chatData, choice = "Success", shape = "wide")
+mlChat <- dfidx(chatData, shape = "wide", choice = "Success")
+mlChat
+```
+
+6 Let's create a model
+
+```{r}
+ChatModel <- mlogit(Success ~ 1 | Good_Mate + Funny + Gender + Sex + Gender:Sex + Funny:Gender, data = mlChat, reference.level  = 3)
+summary(ChatModel)
+```
+
+OBS! There is something wrong with model above! Needs further research!
+
+But you can still check model's coefficients with:
+
+```{r}
+data.frame(exp(ChatModel$coefficients))
+```
+
+We can also check the base model:
+
+```{r}
+chatBase <- mlogit(Success ~ 1, data = mlChat, reference.level = 3)
+summary(chatBase)
+```
+
+Confidence intervals:
+
+```{r}
+exp(confint(ChatModel))
+```
