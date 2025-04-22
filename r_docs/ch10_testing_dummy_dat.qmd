@@ -135,7 +135,7 @@ $$
 MS_M=\frac{SS_M}{df_M}
 $$
 
-Here degrees of freedom is number of groups  - 1 = 2
+Here degrees of freedom is number of groups - 1 = 2
 
 ```{r}
 msm <- ssm / 2
